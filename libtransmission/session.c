@@ -456,6 +456,8 @@ void tr_sessionGetSettings(tr_session* s, tr_variant* d)
     tr_variantDictAddBool(d, TR_KEY_scrape_paused_torrents_enabled, s->scrapePausedTorrents);
     tr_variantDictAddBool(d, TR_KEY_script_torrent_done_enabled, tr_sessionIsTorrentDoneScriptEnabled(s));
     tr_variantDictAddStr(d, TR_KEY_script_torrent_done_filename, tr_sessionGetTorrentDoneScript(s));
+    tr_variantDictAddBool(d, TR_KEY_script_torrent_done_seeding_enabled, tr_sessionIsTorrentDoneSeedingScriptEnabled(s));
+    tr_variantDictAddStr(d, TR_KEY_script_torrent_done_seeding_filename, tr_sessionGetTorrentDoneSeedingScript(s));
     tr_variantDictAddInt(d, TR_KEY_seed_queue_size, tr_sessionGetQueueSize(s, TR_UP));
     tr_variantDictAddBool(d, TR_KEY_seed_queue_enabled, tr_sessionGetQueueEnabled(s, TR_UP));
     tr_variantDictAddBool(d, TR_KEY_alt_speed_enabled, tr_sessionUsesAltSpeed(s));
@@ -1127,6 +1129,16 @@ static void sessionSetImpl(void* vdata)
     if (tr_variantDictFindStr(settings, TR_KEY_script_torrent_done_filename, &str, NULL))
     {
         tr_sessionSetTorrentDoneScript(session, str);
+    }
+
+    if (tr_variantDictFindBool(settings, TR_KEY_script_torrent_done_seeding_enabled, &boolVal))
+    {
+        tr_sessionSetTorrentDoneSeedingScriptEnabled(session, boolVal);
+    }
+
+    if (tr_variantDictFindStr(settings, TR_KEY_script_torrent_done_seeding_filename, &str, NULL))
+    {
+        tr_sessionSetTorrentDoneSeedingScript(session, str);
     }
 
     if (tr_variantDictFindBool(settings, TR_KEY_scrape_paused_torrents_enabled, &boolVal))
@@ -2117,6 +2129,7 @@ void tr_sessionClose(tr_session* session)
 
     tr_device_info_free(session->downloadDir);
     tr_free(session->torrentDoneScript);
+    tr_free(session->torrentDoneSeedingScript);
     tr_free(session->configDir);
     tr_free(session->resumeDir);
     tr_free(session->torrentDir);
@@ -2898,6 +2911,42 @@ void tr_sessionSetTorrentDoneScript(tr_session* session, char const* scriptFilen
     {
         tr_free(session->torrentDoneScript);
         session->torrentDoneScript = tr_strdup(scriptFilename);
+    }
+}
+
+/****
+*****
+****/
+
+bool tr_sessionIsTorrentDoneSeedingScriptEnabled(tr_session const *session)
+{
+    assert(tr_isSession(session));
+    return session->isTorrentDoneSeedingScriptEnabled;
+}
+
+void tr_sessionSetTorrentDoneSeedingScriptEnabled(tr_session *session, bool isEnabled)
+{
+    assert(tr_isSession(session));
+    assert(tr_isBool(isEnabled));
+
+    session->isTorrentDoneSeedingScriptEnabled = isEnabled;
+}
+
+char const* tr_sessionGetTorrentDoneSeedingScript(tr_session const *session)
+{
+    assert(tr_isSession(session));
+
+    return session->torrentDoneSeedingScript;
+}
+
+void tr_sessionSetTorrentDoneSeedingScript(tr_session *session, char const *scriptFilename)
+{
+    assert(tr_isSession(session));
+
+    if (session->torrentDoneSeedingScript != scriptFilename)
+    {
+        tr_free(session->torrentDoneSeedingScript);
+        session->torrentDoneSeedingScript = tr_strdup(scriptFilename);
     }
 }
 

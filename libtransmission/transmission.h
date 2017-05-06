@@ -725,6 +725,18 @@ char const* tr_sessionGetTorrentDoneScript(tr_session const*);
 
 void tr_sessionSetTorrentDoneScript(tr_session*, char const* scriptFilename);
 
+/**
+***
+**/
+
+bool tr_sessionIsTorrentDoneSeedingScriptEnabled(tr_session const *);
+
+void tr_sessionSetTorrentDoneSeedingScriptEnabled(tr_session *, bool isEnabled);
+
+char const* tr_sessionGetTorrentDoneSeedingScript(tr_session const *);
+
+void tr_sessionSetTorrentDoneSeedingScript(tr_session *, char const *scriptFilename);
+
 /** @} */
 
 /**

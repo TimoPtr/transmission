@@ -2109,6 +2109,16 @@ static char const* sessionSet(tr_session* session, tr_variant* args_in, tr_varia
         tr_sessionSetTorrentDoneScriptEnabled(session, boolVal);
     }
 
+    if (tr_variantDictFindStr(args_in, TR_KEY_script_torrent_done_seeding_filename, &str, NULL))
+    {
+        tr_sessionSetTorrentDoneSeedingScript(session, str);
+    }
+
+    if (tr_variantDictFindBool(args_in, TR_KEY_script_torrent_done_seeding_enabled, &boolVal))
+    {
+        tr_sessionSetTorrentDoneSeedingScriptEnabled(session, boolVal);
+    }
+
     if (tr_variantDictFindBool(args_in, TR_KEY_trash_original_torrent_files, &boolVal))
     {
         tr_sessionSetDeleteSource(session, boolVal);
@@ -2381,6 +2391,14 @@ static void addSessionField(tr_session* s, tr_variant* d, tr_quark key)
 
     case TR_KEY_script_torrent_done_enabled:
         tr_variantDictAddBool(d, key, tr_sessionIsTorrentDoneScriptEnabled(s));
+        break;
+
+    case TR_KEY_script_torrent_done_seeding_filename:
+        tr_variantDictAddStr(d, key, tr_sessionGetTorrentDoneSeedingScript(s));
+        break;
+
+    case TR_KEY_script_torrent_done_seeding_enabled:
+        tr_variantDictAddBool(d, key, tr_sessionIsTorrentDoneSeedingScriptEnabled(s));
         break;
 
     case TR_KEY_queue_stalled_enabled:
