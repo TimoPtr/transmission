@@ -129,6 +129,8 @@ static int test_session_get_and_set(void)
     check(tr_variantDictFind(args, TR_KEY_rpc_version_minimum) != NULL);
     check(tr_variantDictFind(args, TR_KEY_script_torrent_done_enabled) != NULL);
     check(tr_variantDictFind(args, TR_KEY_script_torrent_done_filename) != NULL);
+    check(tr_variantDictFind(args, TR_KEY_script_torrent_done_seeding_enabled) != NULL);
+    check(tr_variantDictFind(args, TR_KEY_script_torrent_done_seeding_filename) != NULL);
     check(tr_variantDictFind(args, TR_KEY_seed_queue_enabled) != NULL);
     check(tr_variantDictFind(args, TR_KEY_seed_queue_size) != NULL);
     check(tr_variantDictFind(args, TR_KEY_seedRatioLimit) != NULL);

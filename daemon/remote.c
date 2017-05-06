@@ -314,6 +314,8 @@ static tr_option opts[] =
     { 840, "remove-and-delete", "Remove the current torrent(s) and delete local data", "rad", 0, NULL },
     { 800, "torrent-done-script", "Specify a script to run when a torrent finishes", NULL, 1, "<file>" },
     { 801, "no-torrent-done-script", "Don't run a script when torrents finish", NULL, 0, NULL },
+    { 802, "torrent-done-seeding-script", "Specify a script to run when a torrent finishes to seed", NULL, 1, "<file>" },
+    { 803, "no-torrent-done-seeding-script", "Don't run a script when torrents finish to seed", NULL, 0, NULL },
     { 950, "seedratio", "Let the current torrent(s) seed until a specific ratio", "sr", 1, "ratio" },
     { 951, "seedratio-default", "Let the current torrent(s) use the global seedratio settings", "srd", 0, NULL },
     { 952, "no-seedratio", "Let the current torrent(s) seed regardless of ratio", "SR", 0, NULL },
@@ -415,6 +417,8 @@ static int getOptMode(int val)
     case 'Y': /* no-lpd */
     case 800: /* torrent-done-script */
     case 801: /* no-torrent-done-script */
+    case 802: /* torrent-done-seeding-script */
+    case 803: /* no-torrent-done-seeding-script */
     case 830: /* utp */
     case 831: /* no-utp */
     case 970: /* alt-speed */
@@ -2420,6 +2424,15 @@ static int processArgs(char const* rpcurl, int argc, char const* const* argv)
 
             case 801:
                 tr_variantDictAddBool(args, TR_KEY_script_torrent_done_enabled, false);
+                break;
+
+            case 802:
+                tr_variantDictAddStr(args, TR_KEY_script_torrent_done_seeding_filename, optarg);
+                tr_variantDictAddBool(args, TR_KEY_script_torrent_done_seeding_enabled, true);
+                break;
+
+            case 803:
+                tr_variantDictAddBool(args, TR_KEY_script_torrent_done_seeding_enabled, false);
                 break;
 
             case 970:

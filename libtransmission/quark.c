@@ -301,6 +301,8 @@ static struct tr_key_struct const my_static[] =
     { "scrapeState", 11 },
     { "script-torrent-done-enabled", 27 },
     { "script-torrent-done-filename", 28 },
+    { "script-torrent-done-seeding-enabled", 35 },
+    { "script-torrent-done-seeding-filename", 36 },
     { "seconds-active", 14 },
     { "secondsActive", 13 },
     { "secondsDownloading", 18 },
