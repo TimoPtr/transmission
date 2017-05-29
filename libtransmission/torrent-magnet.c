@@ -24,15 +24,7 @@
 #include "variant.h"
 #include "web.h"
 
-#define dbgmsg(tor, ...) \
-    do \
-    { \
-        if (tr_logGetDeepEnabled()) \
-        { \
-            tr_logAddDeep(__FILE__, __LINE__, tr_torrentName(tor), __VA_ARGS__); \
-        } \
-    } \
-    while (0)
+#define dbgmsg(tor, ...) tr_logAddDeepNamed(tr_torrentName(tor), __VA_ARGS__)
 
 /***
 ****
@@ -215,7 +207,6 @@ void* tr_torrentGetMetadataPiece(tr_torrent* tor, int piece, size_t* len)
 
 void tr_torrentSetMetadataPiece(tr_torrent* tor, int piece, void const* data, int len)
 {
-    int i;
     struct tr_incomplete_metadata* m;
     int const offset = piece * METADATA_PIECE_SIZE;
 
@@ -251,8 +242,10 @@ void tr_torrentSetMetadataPiece(tr_torrent* tor, int piece, void const* data, in
         return;
     }
 
+    int neededPieceIndex = 0;
+
     /* do we need this piece? */
-    for (i = 0; i < m->piecesNeededCount; ++i)
+    for (int i = 0; i < m->piecesNeededCount; ++i, ++neededPieceIndex)
     {
         if (m->piecesNeeded[i].piece == piece)
         {
@@ -260,14 +253,14 @@ void tr_torrentSetMetadataPiece(tr_torrent* tor, int piece, void const* data, in
         }
     }
 
-    if (i == m->piecesNeededCount)
+    if (neededPieceIndex == m->piecesNeededCount)
     {
         return;
     }
 
     memcpy(m->metadata + offset, data, len);
 
-    tr_removeElementFromArray(m->piecesNeeded, i, sizeof(struct metadata_node), m->piecesNeededCount--);
+    tr_removeElementFromArray(m->piecesNeeded, neededPieceIndex, sizeof(struct metadata_node), m->piecesNeededCount--);
 
     dbgmsg(tor, "saving metainfo piece %d... %d remain", piece, m->piecesNeededCount);
 
@@ -352,7 +345,7 @@ void tr_torrentSetMetadataPiece(tr_torrent* tor, int piece, void const* data, in
         {
             int const n = m->pieceCount;
 
-            for (i = 0; i < n; ++i)
+            for (int i = 0; i < n; ++i)
             {
                 m->piecesNeeded[i].piece = i;
                 m->piecesNeeded[i].requestedAt = 0;
@@ -422,7 +415,6 @@ double tr_torrentGetMetadataPercent(tr_torrent const* tor)
 /* FIXME: this should be renamed tr_metainfoGetMagnetLink() and moved to metainfo.c for consistency */
 char* tr_torrentInfoGetMagnetLink(tr_info const* inf)
 {
-    unsigned int i;
     char const* name;
     struct evbuffer* s = evbuffer_new();
 
@@ -436,13 +428,13 @@ char* tr_torrentInfoGetMagnetLink(tr_info const* inf)
         tr_http_escape(s, name, TR_BAD_SIZE, true);
     }
 
-    for (i = 0; i < inf->trackerCount; ++i)
+    for (unsigned int i = 0; i < inf->trackerCount; ++i)
     {
         evbuffer_add_printf(s, "%s", "&tr=");
         tr_http_escape(s, inf->trackers[i].announce, TR_BAD_SIZE, true);
     }
 
-    for (i = 0; i < inf->webseedCount; i++)
+    for (unsigned int i = 0; i < inf->webseedCount; i++)
     {
         evbuffer_add_printf(s, "%s", "&ws=");
         tr_http_escape(s, inf->webseeds[i], TR_BAD_SIZE, true);

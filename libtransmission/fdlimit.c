@@ -25,15 +25,7 @@
 #include "session.h"
 #include "torrent.h" /* tr_isTorrent() */
 
-#define dbgmsg(...) \
-    do \
-    { \
-        if (tr_logGetDeepEnabled()) \
-        { \
-            tr_logAddDeep(__FILE__, __LINE__, NULL, __VA_ARGS__); \
-        } \
-    } \
-    while (0)
+#define dbgmsg(...) tr_logAddDeepNamed(NULL, __VA_ARGS__)
 
 /***
 ****
@@ -273,13 +265,12 @@ struct tr_fileset
 
 static void fileset_construct(struct tr_fileset* set, int n)
 {
-    struct tr_cached_file* o;
     struct tr_cached_file const TR_CACHED_FILE_INIT = { false, TR_BAD_SYS_FILE, 0, 0, 0 };
 
     set->begin = tr_new(struct tr_cached_file, n);
     set->end = set->begin + n;
 
-    for (o = set->begin; o != set->end; ++o)
+    for (struct tr_cached_file* o = set->begin; o != set->end; ++o)
     {
         *o = TR_CACHED_FILE_INIT;
     }
@@ -287,11 +278,9 @@ static void fileset_construct(struct tr_fileset* set, int n)
 
 static void fileset_close_all(struct tr_fileset* set)
 {
-    struct tr_cached_file* o;
-
     if (set != NULL)
     {
-        for (o = set->begin; o != set->end; ++o)
+        for (struct tr_cached_file* o = set->begin; o != set->end; ++o)
         {
             if (cached_file_is_open(o))
             {
@@ -310,11 +299,9 @@ static void fileset_destruct(struct tr_fileset* set)
 
 static void fileset_close_torrent(struct tr_fileset* set, int torrent_id)
 {
-    struct tr_cached_file* o;
-
     if (set != NULL)
     {
-        for (o = set->begin; o != set->end; ++o)
+        for (struct tr_cached_file* o = set->begin; o != set->end; ++o)
         {
             if (o->torrent_id == torrent_id && cached_file_is_open(o))
             {
@@ -326,11 +313,9 @@ static void fileset_close_torrent(struct tr_fileset* set, int torrent_id)
 
 static struct tr_cached_file* fileset_lookup(struct tr_fileset* set, int torrent_id, tr_file_index_t i)
 {
-    struct tr_cached_file* o;
-
     if (set != NULL)
     {
-        for (o = set->begin; o != set->end; ++o)
+        for (struct tr_cached_file* o = set->begin; o != set->end; ++o)
         {
             if (torrent_id == o->torrent_id && i == o->file_index && cached_file_is_open(o))
             {
@@ -348,10 +333,8 @@ static struct tr_cached_file* fileset_get_empty_slot(struct tr_fileset* set)
 
     if (set->begin != NULL)
     {
-        struct tr_cached_file* o;
-
         /* try to find an unused slot */
-        for (o = set->begin; o != set->end; ++o)
+        for (struct tr_cached_file* o = set->begin; o != set->end; ++o)
         {
             if (!cached_file_is_open(o))
             {
@@ -360,7 +343,7 @@ static struct tr_cached_file* fileset_get_empty_slot(struct tr_fileset* set)
         }
 
         /* all slots are full... recycle the least recently used */
-        for (cull = NULL, o = set->begin; o != set->end; ++o)
+        for (struct tr_cached_file* o = set->begin; o != set->end; ++o)
         {
             if (cull == NULL || o->used_at < cull->used_at)
             {
@@ -577,13 +560,23 @@ tr_socket_t tr_fdSocketCreate(tr_session* session, int domain, int type)
 
         if (!buf_logged)
         {
-            int i;
-            socklen_t size = sizeof(int);
+            int i = 0;
+            socklen_t size = sizeof(i);
+
+            if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, (void*)&i, &size) != -1)
+            {
+                tr_logAddDebug("SO_SNDBUF size is %d", i);
+            }
+
+            i = 0;
+            size = sizeof(i);
+
+            if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, (void*)&i, &size) != -1)
+            {
+                tr_logAddDebug("SO_RCVBUF size is %d", i);
+            }
+
             buf_logged = true;
-            getsockopt(s, SOL_SOCKET, SO_SNDBUF, (void*)&i, &size);
-            tr_logAddDebug("SO_SNDBUF size is %d", i);
-            getsockopt(s, SOL_SOCKET, SO_RCVBUF, (void*)&i, &size);
-            tr_logAddDebug("SO_RCVBUF size is %d", i);
         }
     }
 

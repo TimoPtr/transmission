@@ -69,15 +69,7 @@ static size_t guessPacketOverhead(size_t d)
 ***
 **/
 
-#define dbgmsg(io, ...) \
-    do \
-    { \
-        if (tr_logGetDeepEnabled()) \
-        { \
-            tr_logAddDeep(__FILE__, __LINE__, tr_peerIoGetAddrStr(io), __VA_ARGS__); \
-        } \
-    } \
-    while (0)
+#define dbgmsg(io, ...) tr_logAddDeepNamed(tr_peerIoGetAddrStr(io), __VA_ARGS__)
 
 /**
 ***
@@ -627,8 +619,6 @@ static tr_peerIo* tr_peerIoNew(tr_session* session, tr_bandwidth* parent, tr_add
 
     assert(session != NULL);
     assert(session->events != NULL);
-    assert(tr_isBool(isIncoming));
-    assert(tr_isBool(isSeed));
     assert(tr_amInEventThread(session));
     assert((socket == TR_BAD_SOCKET) == (utp_socket != NULL));
 #ifndef WITH_UTP
@@ -1376,11 +1366,10 @@ int tr_peerIoFlush(tr_peerIo* io, tr_direction dir, size_t limit)
 int tr_peerIoFlushOutgoingProtocolMsgs(tr_peerIo* io)
 {
     size_t byteCount = 0;
-    struct tr_datatype const* it;
 
     /* count up how many bytes are used by non-piece-data messages
        at the front of our outbound queue */
-    for (it = io->outbuf_datatypes; it != NULL; it = it->next)
+    for (struct tr_datatype const* it = io->outbuf_datatypes; it != NULL; it = it->next)
     {
         if (it->isPieceData)
         {

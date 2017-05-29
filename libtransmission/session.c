@@ -71,15 +71,7 @@ enum
     SAVE_INTERVAL_SECS = 360
 };
 
-#define dbgmsg(...) \
-    do \
-    { \
-        if (tr_logGetDeepEnabled()) \
-        { \
-            tr_logAddDeep(__FILE__, __LINE__, NULL, __VA_ARGS__); \
-        } \
-    } \
-    while (0)
+#define dbgmsg(...) tr_logAddDeepNamed(NULL, __VA_ARGS__)
 
 static tr_port getRandomPort(tr_session* s)
 {
@@ -92,7 +84,6 @@ static tr_port getRandomPort(tr_session* s)
    designates beta (Azureus-style) */
 void tr_peerIdInit(uint8_t* buf)
 {
-    int i;
     int val;
     int total = 0;
     char const* pool = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -102,14 +93,14 @@ void tr_peerIdInit(uint8_t* buf)
 
     tr_rand_buffer(buf + 8, 11);
 
-    for (i = 8; i < 19; ++i)
+    for (int i = 8; i < 19; ++i)
     {
         val = buf[i] % base;
         total += val;
         buf[i] = pool[val];
     }
 
-    val = total % base != 0 ? base - (total % base) : 0;
+    val = total % base != 0 ? base - total % base : 0;
     buf[19] = pool[val];
     buf[20] = '\0';
 }
@@ -1223,7 +1214,6 @@ int64_t tr_sessionGetDirFreeSpace(tr_session* session, char const* dir)
 void tr_sessionSetIncompleteFileNamingEnabled(tr_session* session, bool b)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(b));
 
     session->isIncompleteFileNamingEnabled = b;
 }
@@ -1261,7 +1251,6 @@ char const* tr_sessionGetIncompleteDir(tr_session const* session)
 void tr_sessionSetIncompleteDirEnabled(tr_session* session, bool b)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(b));
 
     session->isIncompleteDirEnabled = b;
 }
@@ -1489,16 +1478,14 @@ enum
 
 static void turtleUpdateTable(struct tr_turtle_info* t)
 {
-    int day;
     tr_bitfield* b = &t->minutes;
 
     tr_bitfieldSetHasNone(b);
 
-    for (day = 0; day < 7; ++day)
+    for (int day = 0; day < 7; ++day)
     {
         if ((t->days & (1 << day)) != 0)
         {
-            int i;
             time_t const begin = t->beginMinute;
             time_t end = t->endMinute;
 
@@ -1507,7 +1494,7 @@ static void turtleUpdateTable(struct tr_turtle_info* t)
                 end += MINUTES_PER_DAY;
             }
 
-            for (i = begin; i < end; ++i)
+            for (int i = begin; i < end; ++i)
             {
                 tr_bitfieldAdd(b, (i + day * MINUTES_PER_DAY) % MINUTES_PER_WEEK);
             }
@@ -1535,8 +1522,6 @@ static void useAltSpeed(tr_session* s, struct tr_turtle_info* t, bool enabled, b
 {
     assert(tr_isSession(s));
     assert(t != NULL);
-    assert(tr_isBool(enabled));
-    assert(tr_isBool(byUser));
 
     if (t->isEnabled != enabled)
     {
@@ -1649,7 +1634,6 @@ void tr_sessionLimitSpeed(tr_session* s, tr_direction d, bool b)
 {
     assert(tr_isSession(s));
     assert(tr_isDirection(d));
-    assert(tr_isBool(b));
 
     s->speedLimitEnabled[d] = b;
 
@@ -1717,7 +1701,6 @@ void tr_sessionUseAltSpeedTime(tr_session* s, bool b)
     struct tr_turtle_info* t = &s->turtle;
 
     assert(tr_isSession(s));
-    assert(tr_isBool(b));
 
     if (t->isClockEnabled != b)
     {
@@ -1904,7 +1887,6 @@ int tr_sessionCountTorrents(tr_session const* session)
 
 tr_torrent** tr_sessionGetTorrents(tr_session* session, int* setme_n)
 {
-    int i;
     int n;
     tr_torrent** torrents;
     tr_torrent* tor;
@@ -1918,7 +1900,7 @@ tr_torrent** tr_sessionGetTorrents(tr_session* session, int* setme_n)
     torrents = tr_new(tr_torrent*, n);
     tor = NULL;
 
-    for (i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
         torrents[i] = tor = tr_torrentNext(session, tor);
     }
@@ -1947,7 +1929,6 @@ static void sessionCloseImplWaitForIdleUdp(evutil_socket_t foo UNUSED, short bar
 
 static void sessionCloseImplStart(tr_session* session)
 {
-    int i;
     int n;
     tr_torrent** torrents;
 
@@ -1979,7 +1960,7 @@ static void sessionCloseImplStart(tr_session* session)
     torrents = tr_sessionGetTorrents(session, &n);
     qsort(torrents, n, sizeof(tr_torrent*), compareTorrentByCur);
 
-    for (i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
         tr_torrentFree(torrents[i]);
     }
@@ -2156,7 +2137,6 @@ static void sessionLoadTorrents(void* vdata)
     int n = 0;
     tr_sys_path_info info;
     tr_sys_dir_t odir = NULL;
-    tr_list* l = NULL;
     tr_list* list = NULL;
     struct sessionLoadTorrentsData* data = vdata;
     char const* dirname = tr_getTorrentDir(data->session);
@@ -2192,8 +2172,9 @@ static void sessionLoadTorrents(void* vdata)
     }
 
     data->torrents = tr_new(tr_torrent*, n);
+    i = 0;
 
-    for (i = 0, l = list; l != NULL; l = l->next)
+    for (tr_list* l = list; l != NULL; l = l->next)
     {
         data->torrents[i++] = (tr_torrent*)l->data;
     }
@@ -2242,7 +2223,6 @@ tr_torrent** tr_sessionLoadTorrents(tr_session* session, tr_ctor* ctor, int* set
 void tr_sessionSetPexEnabled(tr_session* session, bool enabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(enabled));
 
     session->isPexEnabled = enabled;
 }
@@ -2279,7 +2259,6 @@ static void toggleDHTImpl(void* data)
 void tr_sessionSetDHTEnabled(tr_session* session, bool enabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(enabled));
 
     if (enabled != session->isDHTEnabled)
     {
@@ -2319,7 +2298,6 @@ static void toggle_utp(void* data)
 void tr_sessionSetUTPEnabled(tr_session* session, bool enabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(enabled));
 
     if (enabled != session->isUTPEnabled)
     {
@@ -2352,7 +2330,6 @@ static void toggleLPDImpl(void* data)
 void tr_sessionSetLPDEnabled(tr_session* session, bool enabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(enabled));
 
     if (enabled != session->isLPDEnabled)
     {
@@ -2535,11 +2512,10 @@ static void loadBlocklists(tr_session* session)
 
     if (!tr_ptrArrayEmpty(&loadme))
     {
-        int i;
         int const n = tr_ptrArraySize(&loadme);
         char const* const* paths = (char const* const*)tr_ptrArrayBase(&loadme);
 
-        for (i = 0; i < n; ++i)
+        for (int i = 0; i < n; ++i)
         {
             tr_list_append(&blocklists, tr_blocklistFileNew(paths[i], isEnabled));
         }
@@ -2567,12 +2543,11 @@ void tr_sessionReloadBlocklists(tr_session* session)
 
 int tr_blocklistGetRuleCount(tr_session const* session)
 {
-    tr_list* l;
     int n = 0;
 
     assert(tr_isSession(session));
 
-    for (l = session->blocklists; l != NULL; l = l->next)
+    for (tr_list* l = session->blocklists; l != NULL; l = l->next)
     {
         n += tr_blocklistFileGetRuleCount(l->data);
     }
@@ -2589,14 +2564,11 @@ bool tr_blocklistIsEnabled(tr_session const* session)
 
 void tr_blocklistSetEnabled(tr_session* session, bool isEnabled)
 {
-    tr_list* l;
-
     assert(tr_isSession(session));
-    assert(tr_isBool(isEnabled));
 
     session->isBlocklistEnabled = isEnabled;
 
-    for (l = session->blocklists; l != NULL; l = l->next)
+    for (tr_list* l = session->blocklists; l != NULL; l = l->next)
     {
         tr_blocklistFileSetEnabled(l->data, isEnabled);
     }
@@ -2611,13 +2583,12 @@ bool tr_blocklistExists(tr_session const* session)
 
 int tr_blocklistSetContent(tr_session* session, char const* contentFilename)
 {
-    tr_list* l;
     int ruleCount;
-    tr_blocklistFile* b;
+    tr_blocklistFile* b = NULL;
     char const* defaultName = DEFAULT_BLOCKLIST_FILENAME;
     tr_sessionLock(session);
 
-    for (b = NULL, l = session->blocklists; b == NULL && l != NULL; l = l->next)
+    for (tr_list* l = session->blocklists; b == NULL && l != NULL; l = l->next)
     {
         if (tr_stringEndsWith(tr_blocklistFileGetFilename(l->data), defaultName))
         {
@@ -2640,11 +2611,9 @@ int tr_blocklistSetContent(tr_session* session, char const* contentFilename)
 
 bool tr_sessionIsAddressBlocked(tr_session const* session, tr_address const* addr)
 {
-    tr_list* l;
-
     assert(tr_isSession(session));
 
-    for (l = session->blocklists; l != NULL; l = l->next)
+    for (tr_list* l = session->blocklists; l != NULL; l = l->next)
     {
         if (tr_blocklistFileHasAddress(l->data, addr))
         {
@@ -2893,7 +2862,6 @@ bool tr_sessionIsTorrentDoneScriptEnabled(tr_session const* session)
 void tr_sessionSetTorrentDoneScriptEnabled(tr_session* session, bool isEnabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(isEnabled));
 
     session->isTorrentDoneScriptEnabled = isEnabled;
 }
@@ -2976,7 +2944,6 @@ void tr_sessionSetQueueEnabled(tr_session* session, tr_direction dir, bool is_en
 {
     assert(tr_isSession(session));
     assert(tr_isDirection(dir));
-    assert(tr_isBool(is_enabled));
 
     session->queueEnabled[dir] = is_enabled;
 }
@@ -3000,7 +2967,6 @@ void tr_sessionSetQueueStalledMinutes(tr_session* session, int minutes)
 void tr_sessionSetQueueStalledEnabled(tr_session* session, bool is_enabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(is_enabled));
 
     session->stalledEnabled = is_enabled;
 }
@@ -3049,10 +3015,10 @@ static int compareTorrentAndPositions(void const* va, void const* vb)
 
 void tr_sessionGetNextQueuedTorrents(tr_session* session, tr_direction direction, size_t num_wanted, tr_ptrArray* setme)
 {
-    size_t i;
     size_t n;
     tr_torrent* tor;
     struct TorrentAndPosition* candidates;
+    size_t num_candidates;
 
     assert(tr_isSession(session));
     assert(tr_isDirection(direction));
@@ -3060,7 +3026,7 @@ void tr_sessionGetNextQueuedTorrents(tr_session* session, tr_direction direction
     /* build an array of the candidates */
     n = tr_sessionCountTorrents(session);
     candidates = tr_new(struct TorrentAndPosition, n);
-    i = 0;
+    num_candidates = 0;
     tor = NULL;
 
     while ((tor = tr_torrentNext(session, tor)) != NULL)
@@ -3075,23 +3041,24 @@ void tr_sessionGetNextQueuedTorrents(tr_session* session, tr_direction direction
             continue;
         }
 
-        candidates[i].tor = tor;
-        candidates[i].position = tr_torrentGetQueuePosition(tor);
-        ++i;
+        candidates[num_candidates].tor = tor;
+        candidates[num_candidates].position = tr_torrentGetQueuePosition(tor);
+        ++num_candidates;
     }
 
     /* find the best n candidates */
-    if (num_wanted > i)
+    if (num_wanted > num_candidates)
     {
-        num_wanted = i;
+        num_wanted = num_candidates;
     }
-    else if (num_wanted < i)
+    else if (num_wanted < num_candidates)
     {
-        tr_quickfindFirstK(candidates, i, sizeof(struct TorrentAndPosition), compareTorrentAndPositions, num_wanted);
+        tr_quickfindFirstK(candidates, num_candidates, sizeof(struct TorrentAndPosition), compareTorrentAndPositions,
+            num_wanted);
     }
 
     /* add them to the return array */
-    for (i = 0; i < num_wanted; ++i)
+    for (size_t i = 0; i < num_wanted; ++i)
     {
         tr_ptrArrayAppend(setme, candidates[i].tor);
     }
