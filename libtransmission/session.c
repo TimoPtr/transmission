@@ -2878,7 +2878,6 @@ bool tr_sessionIsTorrentDoneScriptEnabled(tr_session const* session)
 void tr_sessionSetTorrentDoneScriptEnabled(tr_session* session, bool isEnabled)
 {
     assert(tr_isSession(session));
-    assert(tr_isBool(isEnabled));
 
     session->isTorrentDoneScriptEnabled = isEnabled;
 }
