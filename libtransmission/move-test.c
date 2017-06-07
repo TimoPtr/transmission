@@ -37,7 +37,7 @@ static void zeroes_completeness_func(tr_torrent* torrent UNUSED, tr_completeness
     { \
         char* path = tr_torrentFindFile(tor, i); \
         char* expected = expected_path; \
-        check_streq(expected, path); \
+        check_str(path, ==, expected); \
         tr_free(expected); \
         tr_free(path); \
     } \
@@ -85,10 +85,10 @@ static int test_incomplete_dir_impl(char const* incomplete_dir, char const* down
        the test zero_torrent will be missing its first piece */
     tor = libttest_zero_torrent_init(session);
     libttest_zero_torrent_populate(tor, false);
-    check(tr_torrentStat(tor)->leftUntilDone == tor->info.pieceSize);
+    check_uint(tr_torrentStat(tor)->leftUntilDone, ==, tor->info.pieceSize);
     check_file_location(tor, 0, tr_strdup_printf("%s/%s.part", incomplete_dir, tor->info.files[0].name));
     check_file_location(tor, 1, tr_buildPath(incomplete_dir, tor->info.files[1].name, NULL));
-    check_uint_eq(tor->info.pieceSize, tr_torrentStat(tor)->leftUntilDone);
+    check_uint(tr_torrentStat(tor)->leftUntilDone, ==, tor->info.pieceSize);
 
     completeness = completeness_unset;
     tr_torrentSetCompletenessCallback(tor, zeroes_completeness_func, &completeness);
@@ -127,14 +127,14 @@ static int test_incomplete_dir_impl(char const* incomplete_dir, char const* down
     }
 
     libttest_blockingTorrentVerify(tor);
-    check_uint_eq(0, tr_torrentStat(tor)->leftUntilDone);
+    check_uint(tr_torrentStat(tor)->leftUntilDone, ==, 0);
 
     while (completeness == completeness_unset && time(NULL) <= deadline)
     {
         tr_wait_msec(50);
     }
 
-    check_int_eq(TR_SEED, completeness);
+    check_int(completeness, ==, TR_SEED);
 
     for (tr_file_index_t file_index = 0; file_index < tor->info.fileCount; ++file_index)
     {
@@ -193,7 +193,7 @@ static int test_set_location(void)
     tor = libttest_zero_torrent_init(session);
     libttest_zero_torrent_populate(tor, true);
     libttest_blockingTorrentVerify(tor);
-    check_uint_eq(0, tr_torrentStat(tor)->leftUntilDone);
+    check_uint(tr_torrentStat(tor)->leftUntilDone, ==, 0);
 
     /* now move it */
     state = -1;
@@ -204,11 +204,11 @@ static int test_set_location(void)
         tr_wait_msec(50);
     }
 
-    check_int_eq(TR_LOC_DONE, state);
+    check_int(state, ==, TR_LOC_DONE);
 
     /* confirm the torrent is still complete after being moved */
     libttest_blockingTorrentVerify(tor);
-    check_uint_eq(0, tr_torrentStat(tor)->leftUntilDone);
+    check_uint(tr_torrentStat(tor)->leftUntilDone, ==, 0);
 
     /* confirm the filest really got moved */
     libttest_sync();

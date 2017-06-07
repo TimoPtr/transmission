@@ -23,42 +23,42 @@ static int test_list(void)
     tr_rpc_parse_list_str(&top, "12", TR_BAD_SIZE);
     check(tr_variantIsInt(&top));
     check(tr_variantGetInt(&top, &i));
-    check_int_eq(12, i);
+    check_int(i, ==, 12);
     tr_variantFree(&top);
 
     tr_rpc_parse_list_str(&top, "12", 1);
     check(tr_variantIsInt(&top));
     check(tr_variantGetInt(&top, &i));
-    check_int_eq(1, i);
+    check_int(i, ==, 1);
     tr_variantFree(&top);
 
     tr_rpc_parse_list_str(&top, "6,7", TR_BAD_SIZE);
     check(tr_variantIsList(&top));
-    check(tr_variantListSize(&top) == 2);
+    check_uint(tr_variantListSize(&top), ==, 2);
     check(tr_variantGetInt(tr_variantListChild(&top, 0), &i));
-    check_int_eq(6, i);
+    check_int(i, ==, 6);
     check(tr_variantGetInt(tr_variantListChild(&top, 1), &i));
-    check_int_eq(7, i);
+    check_int(i, ==, 7);
     tr_variantFree(&top);
 
     tr_rpc_parse_list_str(&top, "asdf", TR_BAD_SIZE);
     check(tr_variantIsString(&top));
     check(tr_variantGetStr(&top, &str, &len));
-    check_uint_eq(4, len);
-    check_streq("asdf", str);
+    check_uint(len, ==, 4);
+    check_str(str, ==, "asdf");
     tr_variantFree(&top);
 
     tr_rpc_parse_list_str(&top, "1,3-5", TR_BAD_SIZE);
     check(tr_variantIsList(&top));
-    check(tr_variantListSize(&top) == 4);
+    check_uint(tr_variantListSize(&top), ==, 4);
     check(tr_variantGetInt(tr_variantListChild(&top, 0), &i));
-    check_int_eq(1, i);
+    check_int(i, ==, 1);
     check(tr_variantGetInt(tr_variantListChild(&top, 1), &i));
-    check_int_eq(3, i);
+    check_int(i, ==, 3);
     check(tr_variantGetInt(tr_variantListChild(&top, 2), &i));
-    check_int_eq(4, i);
+    check_int(i, ==, 4);
     check(tr_variantGetInt(tr_variantListChild(&top, 3), &i));
-    check_int_eq(5, i);
+    check_int(i, ==, 5);
     tr_variantFree(&top);
 
     return 0;
@@ -84,7 +84,7 @@ static int test_session_get_and_set(void)
 
     session = libttest_session_init(NULL);
     tor = libttest_zero_torrent_init(session);
-    check(tor != NULL);
+    check_ptr(tor, !=, NULL);
 
     tr_variantInitDict(&request, 1);
     tr_variantDictAddStr(&request, TR_KEY_method, "session-get");
@@ -93,6 +93,7 @@ static int test_session_get_and_set(void)
 
     check(tr_variantIsDict(&response));
     check(tr_variantDictFindDict(&response, TR_KEY_arguments, &args));
+    
     check(tr_variantDictFind(args, TR_KEY_alt_speed_down) != NULL);
     check(tr_variantDictFind(args, TR_KEY_alt_speed_enabled) != NULL);
     check(tr_variantDictFind(args, TR_KEY_alt_speed_time_begin) != NULL);
@@ -144,6 +145,7 @@ static int test_session_get_and_set(void)
     check(tr_variantDictFind(args, TR_KEY_units) != NULL);
     check(tr_variantDictFind(args, TR_KEY_utp_enabled) != NULL);
     check(tr_variantDictFind(args, TR_KEY_version) != NULL);
+    
     tr_variantFree(&response);
 
     /* cleanup */
